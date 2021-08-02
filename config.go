@@ -159,3 +159,124 @@ func (e *EnvConfig) useColoredConsolelogs() bool {
 
 	return false
 }
+
+// CfgConfig implement Config interface from config struct
+type CfgConfig struct {
+	EnableJSONFormatter bool   `json:"enable_json_formatter" yaml:"enable_json_formatter"`
+	AppName             string `json:"app_name" yaml:"app_name"`
+	EnvName             string `json:"env_name" yaml:"env_name"`
+	HanlderType         string `json:"handler_name" yaml:"handler_name"`
+	Host                string `json:"host" yaml:"host"`
+	UDPPort             uint   `json:"udp_port" yaml:"udp_port"`
+	TLSPort             uint   `json:"tls_port" yaml:"tls_port"`
+	TLSTimeoutSeconds   string `json:"tls_timeout_seconds" yaml:"tls_timeout_seconds"`
+}
+
+func NewDefaultCfgConfig() *CfgConfig {
+	cfg := &CfgConfig{
+		EnableJSONFormatter: true,
+		AppName:             "pracing",
+		EnvName:             "pracing",
+		HanlderType:         "udp",
+		Host:                "127.0.0.1",
+		UDPPort:             12001,
+		TLSPort:             12001,
+		TLSTimeoutSeconds:   "3",
+	}
+	return cfg
+}
+
+func (e *CfgConfig) enableJSONFormatter() bool {
+	return e.EnableJSONFormatter
+}
+
+func (e *CfgConfig) getGraylogAppName() string {
+	return e.AppName
+}
+
+func (e *CfgConfig) getGraylogHandlerType() graylog.Transport {
+	defaultHandlerType := tlsTransport
+	handlerType := e.HanlderType
+
+	var transportType graylog.Transport
+	if handlerType == tlsTransport {
+		transportType = graylog.TCP
+	}
+
+	if graylog.Transport(handlerType) == graylog.UDP {
+		transportType = graylog.UDP
+	}
+
+	// If no transport type is set use tls by default.
+	if transportType == "" {
+		transportType = graylog.Transport(defaultHandlerType)
+	}
+
+	return transportType
+}
+
+func (e *CfgConfig) getGraylogHost() string {
+	return e.Host
+}
+
+func (e *CfgConfig) getGraylogPort() uint {
+	if e.getGraylogHandlerType() == graylog.UDP {
+		return e.UDPPort
+	}
+
+	if e.getGraylogHandlerType() == graylog.TCP {
+		return e.TLSPort
+	}
+
+	return 12001
+}
+
+func (e *CfgConfig) getGraylogTLSTimeout() time.Duration {
+	defaultTimeout := time.Second * 3
+
+	timeoutString := e.TLSTimeoutSeconds
+	if timeoutString == "" {
+		return defaultTimeout
+	}
+
+	timeoutSeconds, err := strconv.ParseInt(timeoutString, 10, 32)
+	if err != nil {
+		panic("invalid GRAYLOG_TLS_TIMEOUT_SECS could not parse int")
+	}
+
+	return time.Second * time.Duration(timeoutSeconds)
+}
+
+func (e *CfgConfig) getGraylogLogEnvName() string {
+	return e.EnvName
+}
+
+func (e *CfgConfig) getGraylogSkipInsecureSkipVerify() bool {
+	return false
+}
+
+func (e *CfgConfig) getIsTestEnv() bool {
+	// If we're running test return test logger env.
+	if flag.Lookup("test.v") != nil {
+		return true
+	}
+
+	return false
+}
+
+func (e *CfgConfig) useTLS() bool {
+	handlerType := e.HanlderType
+	if handlerType == "" {
+		panic("GRAYLOG_HANDLER_TYPE env not set")
+	}
+
+	if handlerType == tlsTransport {
+		return true
+	}
+
+	return false
+}
+
+func (e *CfgConfig) useColoredConsolelogs() bool {
+	return false
+}
