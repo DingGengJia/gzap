@@ -98,7 +98,7 @@ func (gc GelfCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		ShortMessage: entry.Message,
 		FullMessage:  entry.Stack,
 		Timestamp:    entry.Time.Unix(),
-		Level:        zapToSyslog[entry.Level],
+		Level:        uint(entry.Level),
 		Extra:        extraFields,
 	}
 
