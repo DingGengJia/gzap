@@ -42,17 +42,21 @@ func NewGelfCore(cfg Config, gl Graylog) GelfCore {
 
 // map zapcore's log levels to standard syslog levels used by gelf, approximately.
 var zapToSyslog = map[zapcore.Level]uint{
-	zapcore.DebugLevel:  7,
-	zapcore.InfoLevel:   6,
-	zapcore.WarnLevel:   4,
-	zapcore.ErrorLevel:  3,
-	zapcore.DPanicLevel: 2,
-	zapcore.PanicLevel:  2,
-	zapcore.FatalLevel:  1,
+	zapcore.DebugLevel:  5,
+	zapcore.InfoLevel:   4,
+	zapcore.WarnLevel:   3,
+	zapcore.ErrorLevel:  2,
+	zapcore.DPanicLevel: 1,
+	zapcore.PanicLevel:  1,
+	zapcore.FatalLevel:  0,
 }
 
 // Write writes messages to the configured Graylog endpoint.
 func (gc GelfCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
+	if zapToSyslog[entry.Level] > gc.cfg.getGraylogLogLevel() {
+		return nil
+	}
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		return err
@@ -98,7 +102,7 @@ func (gc GelfCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		ShortMessage: entry.Message,
 		FullMessage:  entry.Stack,
 		Timestamp:    entry.Time.Unix(),
-		Level:        uint(entry.Level),
+		Level:        zapToSyslog[entry.Level],
 		Extra:        extraFields,
 	}
 

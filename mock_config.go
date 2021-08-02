@@ -43,6 +43,11 @@ func (m *MockEnvConfig) getGraylogPort() uint {
 	return args.Get(0).(uint)
 }
 
+func (m *MockEnvConfig) getGraylogLogLevel() uint {
+	args := m.Called()
+	return args.Get(0).(uint)
+}
+
 func (m *MockEnvConfig) getGraylogTLSTimeout() time.Duration {
 	args := m.Called()
 	return args.Get(0).(time.Duration)

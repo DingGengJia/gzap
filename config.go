@@ -20,6 +20,7 @@ type Config interface {
 	getGraylogHandlerType() graylog.Transport
 	getGraylogHost() string
 	getGraylogPort() uint
+	getGraylogLogLevel() uint
 	getGraylogTLSTimeout() time.Duration
 	getGraylogLogEnvName() string
 	getGraylogSkipInsecureSkipVerify() bool
@@ -92,6 +93,17 @@ func (e *EnvConfig) getGraylogPort() uint {
 	}
 
 	return uint(port)
+}
+
+func (e *EnvConfig) getGraylogLogLevel() uint {
+	s := os.Getenv("GRAYLOG_LOG_LEVEL")
+
+	level, err := strconv.ParseUint(s, 10, 32)
+	if err != nil {
+		panic(fmt.Errorf("could not properly parse Graylog LogLevel: %s", s))
+	}
+
+	return uint(level)
 }
 
 func (e *EnvConfig) getGraylogTLSTimeout() time.Duration {
@@ -170,6 +182,7 @@ type CfgConfig struct {
 	UDPPort             uint   `json:"udp_port" yaml:"udp_port"`
 	TLSPort             uint   `json:"tls_port" yaml:"tls_port"`
 	TLSTimeoutSeconds   string `json:"tls_timeout_seconds" yaml:"tls_timeout_seconds"`
+	LogLevel            uint   `json:"log_level" yaml:"log_level"`
 }
 
 func NewDefaultCfgConfig() *CfgConfig {
@@ -182,6 +195,7 @@ func NewDefaultCfgConfig() *CfgConfig {
 		UDPPort:             12001,
 		TLSPort:             12001,
 		TLSTimeoutSeconds:   "3",
+		LogLevel:            4,
 	}
 	return cfg
 }
@@ -229,6 +243,10 @@ func (e *CfgConfig) getGraylogPort() uint {
 	}
 
 	return 12001
+}
+
+func (e *CfgConfig) getGraylogLogLevel() uint {
+	return e.LogLevel
 }
 
 func (e *CfgConfig) getGraylogTLSTimeout() time.Duration {
